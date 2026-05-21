@@ -23,16 +23,6 @@ from parser import Parser, ParseError
 from interpreter import Interpreter
 from ast_nodes import CompilationUnit
 
-BANNER = r"""
-  _____         _   ____
- |  ___|__  ___| |_|  _ \ _   _
- | |_ / _ \/ __| __| |_) | | | |
- |  _| (_) \__ \ |_|  __/| |_| |
- |_|  \___/|___/\__|_|    \__, |
- Fortran 77/90 Interpreter |___/
-"""
-
-
 def load_source(path: str) -> str:
     try:
         with open(path, 'r') as f:
@@ -111,10 +101,6 @@ def cmd_run(args):
 
 
 def main():
-    if len(sys.argv) == 1:
-        print(BANNER)
-        print(__doc__)
-        sys.exit(0)
 
     parser = argparse.ArgumentParser(
         prog='fsrtup',

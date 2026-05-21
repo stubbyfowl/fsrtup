@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-FortPy — A Fortran 77/90 interpreter written in Python
+Fsrtup — A Fortran 77/90 interpreter written in Python
 
 Usage:
-  fortpy run <file.f90>    Interpret the program
-  fortpy check <file.f90>  Parse & check only (no run)
-  fortpy dump <file.f90>   Dump token stream
-  fortpy ast <file.f90>    Dump AST
-  fortpy -h | --help
+  fsrtup run <file.f90>    Interpret the program
+  fsrtup check <file.f90>  Parse & check only (no run)
+  fsrtup dump <file.f90>   Dump token stream
+  fsrtup ast <file.f90>    Dump AST
+  fsrtup -h | --help
 """
 
 import sys
@@ -117,8 +117,8 @@ def main():
         sys.exit(0)
 
     parser = argparse.ArgumentParser(
-        prog='fortpy',
-        description='FortPy — Fortran 77/90 interpreter')
+        prog='fsrtup',
+        description='fsrtup — Fortran 77/90 interpreter')
     sub = parser.add_subparsers(dest='command')
 
     p_run = sub.add_parser('run', help='Run a Fortran program')

@@ -24,40 +24,40 @@ No dependencies required — just Python 3.8+.
 
 ```bash
 # Clone or extract the project
-cd fortpy
+cd fsrtup
 
 # Run directly
-python3 src/fortpy.py run examples/hello.f90
+python3 src/fsrtup.py run examples/hello.f90
 ```
 
 ### Optional: install as a command
 
 ```bash
 pip install --editable .
-fortpy run examples/hello.f90
+fsrtup run examples/hello.f90
 ```
 
 ## Usage
 
 ```
-fortpy run   <file.f90>   # Run a Fortran program
-fortpy check <file.f90>   # Parse and syntax-check only
-fortpy dump  <file.f90>   # Dump the token stream
-fortpy ast   <file.f90>   # Dump the AST
+fsrtup run   <file.f90>   # Run a Fortran program
+fsrtup check <file.f90>   # Parse and syntax-check only
+fsrtup dump  <file.f90>   # Dump the token stream
+fsrtup ast   <file.f90>   # Dump the AST
 ```
 
 ## Examples
 
 ```bash
-python3 src/fortpy.py run examples/hello.f90
-python3 src/fortpy.py run examples/fibonacci.f90
-python3 src/fortpy.py run examples/math_demo.f90
+python3 src/fsrtup.py run examples/hello.f90
+python3 src/fsrtup.py run examples/fibonacci.f90
+python3 src/fsrtup.py run examples/math_demo.f90
 ```
 
 ## Running tests
 
 ```bash
-python3 tests/test_fortpy.py
+python3 tests/test_fsrtup.py
 ```
 
 Expected: **35/35 tests passed**.
@@ -65,9 +65,9 @@ Expected: **35/35 tests passed**.
 ## Project structure
 
 ```
-fortpy/
+fsrtup/
 ├── src/
-│   ├── fortpy.py       # CLI entry point
+│   ├── fsrtup.py       # CLI entry point
 │   ├── lexer.py        # Tokenizer
 │   ├── ast_nodes.py    # AST node dataclasses
 │   ├── parser.py       # Recursive-descent parser
@@ -77,7 +77,7 @@ fortpy/
 │   ├── fibonacci.f90
 │   └── math_demo.f90
 ├── tests/
-│   └── test_fortpy.py
+│   └── test_fsrtup.py
 └── README.md
 ```
 

@@ -1,4 +1,4 @@
-# FortPy — Fortran 77/90 Interpreter
+# Fsrtup — Fortran 77/90 Interpreter
 
 A pure-Python interpreter for a substantial subset of Fortran 77/90, built from scratch with a hand-written lexer, recursive-descent parser, and tree-walking interpreter.
 

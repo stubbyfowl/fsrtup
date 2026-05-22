@@ -1,16 +1,8 @@
-# FortPy — Open-Source Fortran 77/90 Compiler
+# Fsrtup — Open-Source Fortran 77/90 Compiler
 
 A true compiler for Fortran 77/90 written in pure Python 3.
 **It does not interpret source code.** It compiles Fortran to stack-based
 bytecode, which a separate VM then executes — no AST is touched at runtime.
-
-```
-  ___         _   ___
- | __| ___ _ _| |_| _ \_  _
- | _| / _ \ '_|  _|  _/ || |
- |_|  \___/_|  \__|_|  \_, |
-   Fortran Compiler + VM |__/
-```
 
 ## Compiler Pipeline
 
@@ -82,19 +74,19 @@ without the source file, just like a `.class` or `.pyc` file.
 
 ```bash
 # Compile Fortran to .fbc bytecode
-python3 src/fortpy.py compile hello.f90
+python3 src/fsrtup.py compile hello.f90
 
 # Execute the bytecode (source not needed)
-python3 src/fortpy.py exec hello.fbc
+python3 src/fsrtup.py exec hello.fbc
 
 # Compile and run in one step
-python3 src/fortpy.py run hello.f90
+python3 src/fsrtup.py run hello.f90
 
 # Show bytecode disassembly
-python3 src/fortpy.py dis hello.f90
+python3 src/fsrtup.py dis hello.f90
 
 # Parse + type-check only
-python3 src/fortpy.py check hello.f90
+python3 src/fsrtup.py check hello.f90
 ```
 
 ## Example: What the compiler emits
@@ -151,7 +143,7 @@ src/
 ├── bytecode.py   Instruction set (Op enum) + BytecodeModule
 ├── compiler.py   AST → BytecodeModule  ← THE COMPILER
 ├── vm.py         BytecodeModule → output  ← THE VM
-└── fortpy.py     CLI driver
+└── fsrtup.py     CLI driver
 
 examples/
 ├── hello.f90

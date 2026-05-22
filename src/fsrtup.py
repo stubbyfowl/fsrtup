@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-FortPy — Fortran 77/90 Compiler + Virtual Machine
+Fsrtup — Fortran 77/90 Compiler + Virtual Machine
 ======================================================
 Pipeline:  Source → Lexer → Parser → AST → Semantic Analysis
                   → Compiler → Bytecode → VM → Output
 
 Usage:
-  fortpy compile <file.f90>              Compile to .fbc bytecode file
-  fortpy run     <file.f90>              Compile and run
-  fortpy exec    <file.fbc>             Execute a .fbc bytecode file
-  fortpy dis     <file.f90>             Disassemble (show bytecode)
-  fortpy check   <file.f90>             Parse + semantic check only
-  fortpy tokens  <file.f90>             Dump token stream
-  fortpy ast     <file.f90>             Dump AST
+  fsrtup compile <file.f90>              Compile to .fbc bytecode file
+  fsrtup run     <file.f90>              Compile and run
+  fsrtup exec    <file.fbc>             Execute a .fbc bytecode file
+  fsrtup dis     <file.f90>             Disassemble (show bytecode)
+  fsrtup check   <file.f90>             Parse + semantic check only
+  fsrtup tokens  <file.f90>             Dump token stream
+  fsrtup ast     <file.f90>             Dump AST
 """
 
 import sys, os, argparse, pickle, pprint
@@ -110,7 +110,7 @@ def main():
     if len(sys.argv) == 1:
         print(BANNER); print(__doc__); sys.exit(0)
 
-    ap = argparse.ArgumentParser(prog='fortpy', description='FortPy Fortran compiler')
+    ap = argparse.ArgumentParser(prog='fsrtup', description='fsrtup Fortran compiler')
     sub = ap.add_subparsers(dest='cmd')
 
     for name, help_ in [('run','Compile and run'), ('dis','Show bytecode'),

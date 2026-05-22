@@ -1,4 +1,6 @@
-# Fsrtup — Open-Source Fortran 77/90 Compiler
+# Fsrtup — Open-Source Fortran 77/90 Compiler - 
+
+But please note that it is not as good as gfortran and this is for fun only, it doesn't have advanced functions like character(len=30) for example, only character
 
 A true compiler for Fortran 77/90 written in pure Python 3.
 **It does not interpret source code.** It compiles Fortran to stack-based

@@ -2,6 +2,7 @@
 FortPy Parser — Recursive-descent parser for Fortran 77/90 subset.
 Builds an AST from a token stream produced by the Lexer.
 """
+
 from typing import List, Optional, Any, Tuple
 from lexer import Token, TokenType, Lexer
 from ast_nodes import *
@@ -20,6 +21,7 @@ class Parser:
         self.pos = 0
 
     # ── Token utilities ───────────────────────────────────────────────────────
+
     def _filter(self, tokens: List[Token]) -> List[Token]:
         result = []
         prev_nl = False
@@ -86,12 +88,14 @@ class Parser:
         if self.check(TokenType.NEWLINE, TokenType.SEMICOLON):
             self.advance()
         elif not self.check(TokenType.EOF):
+            # Tolerate missing newline before certain keywords
             pass
 
     def current_line(self) -> int:
         return self.peek().line
 
     # ── Entry point ───────────────────────────────────────────────────────────
+
     def parse(self) -> CompilationUnit:
         self.skip_newlines()
         units = []
@@ -103,6 +107,7 @@ class Parser:
         return CompilationUnit(units=units, line=0)
 
     # ── Program units ─────────────────────────────────────────────────────────
+
     def parse_program_unit(self) -> Any:
         t = self.peek()
         if t.type == TokenType.KEYWORD:
@@ -116,6 +121,7 @@ class Parser:
                 return self.parse_module()
             # Type-prefixed function: INTEGER FUNCTION foo(...)
             if t.value in ('integer', 'real', 'double', 'complex', 'logical', 'character'):
+                # Check if followed (possibly after type spec) by FUNCTION keyword
                 saved_pos = self.pos
                 type_spec = self.parse_type_spec()
                 if self.check_kw('function'):
@@ -196,28 +202,35 @@ class Parser:
         self.consume_newline()
 
     # ── Body (declarations + statements) ──────────────────────────────────────
+
     def parse_body(self) -> Tuple[List[Any], List[Any]]:
         self.skip_newlines()
         decls = []
         stmts = []
         in_decl_section = True
+
         while not self.check(TokenType.EOF):
             self.skip_newlines()
             t = self.peek()
+
             # Stop at end / contains
             if t.type == TokenType.KEYWORD and t.value in ('end', 'contains'):
                 break
+
             # Try declaration
             if in_decl_section and self._is_declaration():
                 d = self.parse_declaration()
                 if d:
                     decls.append(d)
                 continue
+
             in_decl_section = False
+
             # Statement
             stmt = self.parse_statement()
             if stmt is not None:
                 stmts.append(stmt)
+
         return decls, stmts
 
     def _is_declaration(self) -> bool:
@@ -228,16 +241,17 @@ class Parser:
                            'character', 'implicit', 'parameter', 'dimension')
 
     # ── Declarations ──────────────────────────────────────────────────────────
+
     def parse_declaration(self) -> Any:
         line = self.current_line()
         t = self.peek()
+
         if t.value == 'implicit':
             return self.parse_implicit()
         if t.value == 'parameter':
             return self.parse_parameter_stmt()
 
         type_spec = self.parse_type_spec()
-
         # Handle FUNCTION with type prefix: INTEGER FUNCTION foo(...)
         if self.check_kw('function'):
             return self.parse_function(return_type=type_spec)
@@ -247,10 +261,11 @@ class Parser:
         is_parameter = False
         intent = None
 
-        # Attribute list: may be ", INTENT(IN) ::" or ", PARAMETER ::" or just "::"
+        # Attribute list after ::
         if self.check(TokenType.DOUBLE_COLON):
             self.advance()
         elif self.check(TokenType.COMMA):
+            # possible attributes: INTENT(IN), PARAMETER, DIMENSION(...)
             self.advance()
             attr = self.peek()
             if attr.type == TokenType.KEYWORD and attr.value == 'intent':
@@ -267,7 +282,7 @@ class Parser:
                 is_parameter = True
             elif attr.type == TokenType.KEYWORD and attr.value == 'dimension':
                 self.advance()
-            # After attribute, expect :: before the variable list
+                # parse dimensions; applied to all names later
             self.match(TokenType.DOUBLE_COLON)
 
         names = []
@@ -289,9 +304,6 @@ class Parser:
             names.append(name)
             if not self.match(TokenType.COMMA):
                 break
-            # Check if next is an attribute (not a variable name)
-            if self.check_kw('intent', 'parameter', 'dimension'):
-                break
 
         self.consume_newline()
         return VarDecl(type_spec=type_spec, names=names, dimensions=dimensions,
@@ -309,6 +321,7 @@ class Parser:
         length = None
         if self.check(TokenType.LPAREN):
             self.advance()
+            # CHARACTER*(n) or CHARACTER(LEN=n) or INTEGER(KIND=4)
             if self.check(TokenType.STAR):
                 self.advance()
                 length = self.parse_expr()
@@ -344,6 +357,7 @@ class Parser:
         return ParameterStmt(assignments=assignments, line=line)
 
     # ── Statements ────────────────────────────────────────────────────────────
+
     def parse_statement(self) -> Any:
         self.skip_newlines()
         line = self.current_line()
@@ -360,12 +374,12 @@ class Parser:
 
         if t.type == TokenType.KEYWORD:
             kw = t.value
-            if kw == 'if':       return self.parse_if()
-            if kw == 'do':       return self.parse_do()
-            if kw == 'print':    return self.parse_print()
-            if kw == 'write':    return self.parse_write()
-            if kw == 'read':     return self.parse_read()
-            if kw == 'call':     return self.parse_call()
+            if kw == 'if':      return self.parse_if()
+            if kw == 'do':      return self.parse_do()
+            if kw == 'print':   return self.parse_print()
+            if kw == 'write':   return self.parse_write()
+            if kw == 'read':    return self.parse_read()
+            if kw == 'call':    return self.parse_call()
             if kw == 'return':
                 self.advance(); self.consume_newline()
                 return ReturnStmt(line=line)
@@ -392,12 +406,12 @@ class Parser:
                 return ExitStmt(line=line)
             if kw in ('end', 'contains'):
                 return None
-            # Declarative keywords that appear in body
+            # Declarative keywords that appear in body (shouldn't happen ideally)
             if kw in ('integer', 'real', 'double', 'complex', 'logical',
-                       'character', 'implicit', 'parameter', 'dimension'):
+                      'character', 'implicit', 'parameter', 'dimension'):
                 return self.parse_declaration()
 
-        # Assignment: identifier = expr OR array(i) = expr
+        # Assignment: identifier = expr  OR  array(i) = expr
         if t.type == TokenType.IDENTIFIER:
             return self.parse_assignment_or_call()
 
@@ -407,7 +421,7 @@ class Parser:
 
     def parse_assignment_or_call(self) -> Any:
         line = self.current_line()
-        name = self.advance().value  # identifier
+        name = self.advance().value   # identifier
 
         # Array ref or function call
         indices = []
@@ -439,13 +453,14 @@ class Parser:
         condition = self.parse_expr()
         self.expect(TokenType.RPAREN)
 
-        # IF (...) THEN → block
+        # IF (...) THEN  → block
         if self.check_kw('then'):
             self.advance()
             self.consume_newline()
             then_body = []
             elseif_clauses = []
             else_body = None
+
             while True:
                 self.skip_newlines()
                 if self.check_kw('endif'):
@@ -479,6 +494,7 @@ class Parser:
                     continue
                 s = self.parse_statement()
                 if s: then_body.append(s)
+
             return IfBlock(condition=condition, then_body=then_body,
                            elseif_clauses=elseif_clauses, else_body=else_body, line=line)
 
@@ -489,8 +505,8 @@ class Parser:
     def parse_do(self) -> DoLoop:
         line = self.current_line()
         self.expect_kw('do')
-        label = None
 
+        label = None
         # Optional numeric label
         if self.check(TokenType.INTEGER_LIT):
             label = int(self.advance().value)
@@ -631,6 +647,7 @@ class Parser:
         return CallStmt(name=name, args=args, line=line)
 
     # ── Expressions ───────────────────────────────────────────────────────────
+
     def parse_expr(self) -> Any:
         return self.parse_or_expr()
 
@@ -695,7 +712,7 @@ class Parser:
         base = self.parse_unary()
         if self.check(TokenType.POWER):
             op = self.advance().value
-            exp = self.parse_power()  # right-associative
+            exp = self.parse_power()   # right-associative
             return BinOp(op=op, left=base, right=exp, line=base.line)
         return base
 
@@ -717,21 +734,26 @@ class Parser:
         if t.type == TokenType.INTEGER_LIT:
             self.advance()
             return IntLiteral(value=int(t.value), line=line)
+
         if t.type == TokenType.REAL_LIT:
             self.advance()
             v = t.value.replace('d', 'e').replace('D', 'e')
             return RealLiteral(value=float(v), line=line)
+
         if t.type == TokenType.STRING_LIT:
             self.advance()
             return StringLiteral(value=t.value, line=line)
+
         if t.type == TokenType.LOGICAL_LIT:
             self.advance()
             return LogicalLiteral(value=t.value == '.TRUE.', line=line)
+
         if t.type == TokenType.LPAREN:
             self.advance()
             expr = self.parse_expr()
             self.expect(TokenType.RPAREN)
             return expr
+
         if t.type == TokenType.IDENTIFIER:
             name = self.advance().value
             if self.check(TokenType.LPAREN):
@@ -743,7 +765,9 @@ class Parser:
                 self.expect(TokenType.RPAREN)
                 return FunctionCall(name=name, args=args, line=line)
             return Identifier(name=name, line=line)
+
         if t.type == TokenType.KEYWORD:
+            # Some keywords can appear as identifiers in expressions (.TRUE. already handled)
             name = self.advance().value
             return Identifier(name=name, line=line)
 

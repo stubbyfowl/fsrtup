@@ -1,12 +1,20 @@
+! examples/fibonacci.f90 — Fibonacci sequence
 program fibonacci
-  integer :: a, b, c, i
-  print *, 'Fibonacci sequence (first 15 terms):'
+  implicit none
+  integer :: n, i, a, b, temp
+
+  n = 15
   a = 0
   b = 1
-  do i = 1, 15
-    print *, a
-    c = a + b
+
+  print *, 'Fibonacci sequence (first', n, 'terms):'
+  print *, a, b
+
+  do i = 3, n
+    temp = a + b
     a = b
-    b = c
+    b = temp
+    print *, b
   end do
+
 end program fibonacci

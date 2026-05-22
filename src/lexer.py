@@ -1,6 +1,7 @@
 """
 FortPy Lexer - Tokenizes Fortran 77/90 source code
 """
+
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -9,41 +10,45 @@ from typing import List, Optional
 
 class TokenType(Enum):
     # Literals
-    INTEGER_LIT = auto()
-    REAL_LIT = auto()
-    STRING_LIT = auto()
-    LOGICAL_LIT = auto()
+    INTEGER_LIT   = auto()
+    REAL_LIT      = auto()
+    STRING_LIT    = auto()
+    LOGICAL_LIT   = auto()
+
     # Identifiers & Keywords
-    IDENTIFIER = auto()
-    KEYWORD = auto()
+    IDENTIFIER    = auto()
+    KEYWORD       = auto()
+
     # Operators
-    PLUS = auto()
-    MINUS = auto()
-    STAR = auto()
-    SLASH = auto()
-    POWER = auto()   # **
-    EQ = auto()      # =
-    EQ_EQ = auto()   # == or .EQ.
-    NEQ = auto()     # /= or .NE.
-    LT = auto()      # < or .LT.
-    LE = auto()      # <= or .LE.
-    GT = auto()      # > or .GT.
-    GE = auto()      # >= or .GE.
-    AND = auto()     # .AND.
-    OR = auto()      # .OR.
-    NOT = auto()     # .NOT.
-    CONCAT = auto()  # //
+    PLUS          = auto()
+    MINUS         = auto()
+    STAR          = auto()
+    SLASH         = auto()
+    POWER         = auto()   # **
+    EQ            = auto()   # =
+    EQ_EQ         = auto()   # ==  or .EQ.
+    NEQ           = auto()   # /=  or .NE.
+    LT            = auto()   # <   or .LT.
+    LE            = auto()   # <=  or .LE.
+    GT            = auto()   # >   or .GT.
+    GE            = auto()   # >=  or .GE.
+    AND           = auto()   # .AND.
+    OR            = auto()   # .OR.
+    NOT           = auto()   # .NOT.
+    CONCAT        = auto()   # //
+
     # Delimiters
-    LPAREN = auto()
-    RPAREN = auto()
-    COMMA = auto()
-    COLON = auto()
-    DOUBLE_COLON = auto()
-    SEMICOLON = auto()
-    NEWLINE = auto()
-    EOF = auto()
+    LPAREN        = auto()
+    RPAREN        = auto()
+    COMMA         = auto()
+    COLON         = auto()
+    DOUBLE_COLON  = auto()
+    SEMICOLON     = auto()
+    NEWLINE       = auto()
+    EOF           = auto()
+
     # Comments (usually skipped)
-    COMMENT = auto()
+    COMMENT       = auto()
 
 
 KEYWORDS = {
@@ -83,6 +88,7 @@ class Lexer:
     Tokenizes Fortran source code (free-form and fixed-form).
     Case-insensitive per the Fortran standard.
     """
+
     def __init__(self, source: str, fixed_form: bool = False):
         self.source = source
         self.fixed_form = fixed_form
@@ -152,13 +158,15 @@ class Lexer:
         while self.pos < len(self.source) and self.source[self.pos].isdigit():
             num += self.advance()
         if self.pos < len(self.source) and self.source[self.pos] == '.':
+            # Look ahead: ".EQ." etc. should not be consumed as decimal
             next_ch = self.peek(1)
             if next_ch and (next_ch.isdigit() or next_ch in 'eEdD'):
                 is_real = True
-                num += self.advance()
+                num += self.advance()  # consume '.'
                 while self.pos < len(self.source) and self.source[self.pos].isdigit():
                     num += self.advance()
             elif next_ch and next_ch.isalpha() and next_ch.upper() not in 'EGLNOT':
+                # Likely a decimal point before identifier — treat as real
                 is_real = True
                 num += self.advance()
         # Exponent
@@ -194,15 +202,15 @@ class Lexer:
         upper = word.upper()
         mapping = {
             'AND': TokenType.AND,
-            'OR': TokenType.OR,
+            'OR':  TokenType.OR,
             'NOT': TokenType.NOT,
-            'EQ': TokenType.EQ_EQ,
-            'NE': TokenType.NEQ,
-            'LT': TokenType.LT,
-            'LE': TokenType.LE,
-            'GT': TokenType.GT,
-            'GE': TokenType.GE,
-            'TRUE': TokenType.LOGICAL_LIT,
+            'EQ':  TokenType.EQ_EQ,
+            'NE':  TokenType.NEQ,
+            'LT':  TokenType.LT,
+            'LE':  TokenType.LE,
+            'GT':  TokenType.GT,
+            'GE':  TokenType.GE,
+            'TRUE':  TokenType.LOGICAL_LIT,
             'FALSE': TokenType.LOGICAL_LIT,
         }
         tok_type = mapping.get(upper, TokenType.IDENTIFIER)
@@ -214,6 +222,7 @@ class Lexer:
             self.skip_whitespace()
             if self.pos >= len(self.source):
                 break
+
             ch = self.source[self.pos]
             line, col = self.line, self.col
 
@@ -328,6 +337,7 @@ class Lexer:
             # Line continuation (&)
             if ch == '&':
                 self.advance()
+                # skip rest of line and leading & on next line
                 while self.pos < len(self.source) and self.source[self.pos] != '\n':
                     self.advance()
                 continue

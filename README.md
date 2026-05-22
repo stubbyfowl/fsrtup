@@ -1,99 +1,179 @@
-# Fsrtup — Fortran 77/90 Interpreter
+# FortPy — Open-Source Fortran 77/90 Compiler
 
-A pure-Python interpreter for a substantial subset of Fortran 77/90, built from scratch with a hand-written lexer, recursive-descent parser, and tree-walking interpreter.
+A true compiler for Fortran 77/90 written in pure Python 3.
+**It does not interpret source code.** It compiles Fortran to stack-based
+bytecode, which a separate VM then executes — no AST is touched at runtime.
 
-## Features
-
-- **Lexer**: Full tokenization of free-form and fixed-form Fortran (`.f90` / `.f`)
-- **Parser**: Recursive-descent parser producing a typed AST
-- **Interpreter**: Tree-walking interpreter with environment-based scoping
-
-### Supported language features
-- Data types: `INTEGER`, `REAL`, `DOUBLE PRECISION`, `LOGICAL`, `CHARACTER`
-- Control flow: `IF/THEN/ELSEIF/ELSE/ENDIF`, `DO`, `DO WHILE`, `GOTO`, `CYCLE`, `EXIT`
-- Subprograms: `FUNCTION`, `SUBROUTINE` with `INTENT(IN/OUT/INOUT)`
-- Arrays: 1D array declarations and element access
-- I/O: `PRINT *`, `WRITE`, `READ`
-- Declarations: `IMPLICIT NONE`, `PARAMETER`, `DIMENSION`
-- Operators: arithmetic, relational (both symbolic and `.EQ.` style), logical, string concat `//`
-- 40+ built-in intrinsics: `ABS`, `SQRT`, `SIN`, `COS`, `MOD`, `MAX`, `MIN`, `LEN`, `TRIM`, etc.
-
-## Installation
-
-No dependencies required — just Python 3.8+.
-
-```bash
-# Clone or extract the project
-cd fsrtup
-
-# Run directly
-python3 src/fsrtup.py run examples/hello.f90
+```
+  ___         _   ___
+ | __| ___ _ _| |_| _ \_  _
+ | _| / _ \ '_|  _|  _/ || |
+ |_|  \___/_|  \__|_|  \_, |
+   Fortran Compiler + VM |__/
 ```
 
-### Optional: install as a command
+## Compiler Pipeline
 
-```bash
-pip install --editable .
-fsrtup run examples/hello.f90
 ```
+Fortran source (.f90)
+        │
+        ▼
+   ┌─────────┐
+   │  Lexer  │  tokenises source, strips comments/whitespace
+   └────┬────┘
+        │  List[Token]
+        ▼
+   ┌─────────┐
+   │  Parser │  recursive-descent, builds typed AST
+   └────┬────┘
+        │  CompilationUnit (AST)
+        ▼
+   ┌──────────────────┐
+   │ Semantic Analyzer│  symbol table, scope resolution, type checking
+   └────────┬─────────┘
+        │  annotated AST + symbol tables
+        ▼
+   ┌──────────┐
+   │ Compiler │  traverses AST, EMITS bytecode instructions
+   └────┬─────┘       (no values computed here — only instructions)
+        │  BytecodeModule (.fbc)
+        ▼
+   ┌──────────────────────┐
+   │  Virtual Machine     │  executes bytecode, knows nothing of Fortran
+   └──────────────────────┘
+        │
+        ▼
+     Output
+```
+
+The `.fbc` bytecode file is a **standalone artifact** — it can be executed
+without the source file, just like a `.class` or `.pyc` file.
+
+## Bytecode Instruction Set
+
+| Instruction    | Description                            |
+|----------------|----------------------------------------|
+| `PUSH_INT n`   | Push integer constant                  |
+| `PUSH_REAL f`  | Push real constant                     |
+| `PUSH_STR s`   | Push string constant                   |
+| `PUSH_BOOL b`  | Push logical constant                  |
+| `LOAD name`    | Load variable onto stack               |
+| `STORE name`   | Pop stack, store into variable         |
+| `LOAD_ARR name`| Array element load (index on stack)    |
+| `STORE_ARR name`| Array element store                   |
+| `ADD / SUB / MUL / DIV / POW` | Arithmetic           |
+| `NEG`          | Unary negation                         |
+| `CONCAT`       | String concatenation (//)              |
+| `CMP_EQ/NE/LT/LE/GT/GE` | Comparisons               |
+| `LOGICAL_AND/OR/NOT` | Logical operators                |
+| `JUMP addr`    | Unconditional jump                     |
+| `JUMP_FALSE addr` | Jump if top-of-stack is false       |
+| `JUMP_TRUE addr`  | Jump if top-of-stack is true        |
+| `PRINT_NL n`   | Pop n items, print space-separated     |
+| `CALL (name,n)`| Call user-defined function/subroutine  |
+| `CALL_BUILTIN (name,n)` | Call built-in function        |
+| `RETURN`       | Return from subroutine                 |
+| `RETURN_VAL`   | Return with value from function        |
+| `ALLOC_ARR (name,ndim)` | Allocate array                |
+| `POP`          | Discard top of stack                   |
+| `HALT`         | End program                            |
 
 ## Usage
 
-```
-fsrtup run   <file.f90>   # Run a Fortran program
-fsrtup check <file.f90>   # Parse and syntax-check only
-fsrtup dump  <file.f90>   # Dump the token stream
-fsrtup ast   <file.f90>   # Dump the AST
-```
-
-## Examples
-
 ```bash
-python3 src/fsrtup.py run examples/hello.f90
-python3 src/fsrtup.py run examples/fibonacci.f90
-python3 src/fsrtup.py run examples/math_demo.f90
+# Compile Fortran to .fbc bytecode
+python3 src/fortpy.py compile hello.f90
+
+# Execute the bytecode (source not needed)
+python3 src/fortpy.py exec hello.fbc
+
+# Compile and run in one step
+python3 src/fortpy.py run hello.f90
+
+# Show bytecode disassembly
+python3 src/fortpy.py dis hello.f90
+
+# Parse + type-check only
+python3 src/fortpy.py check hello.f90
 ```
 
-## Running tests
+## Example: What the compiler emits
 
-```bash
-python3 tests/test_fsrtup.py
-```
-
-Expected: **35/35 tests passed**.
-
-## Project structure
+For `x = 5 + 2 * 3`:
 
 ```
-fsrtup/
-├── src/
-│   ├── fsrtup.py       # CLI entry point
-│   ├── lexer.py        # Tokenizer
-│   ├── ast_nodes.py    # AST node dataclasses
-│   ├── parser.py       # Recursive-descent parser
-│   └── interpreter.py  # Tree-walking interpreter
-├── examples/
-│   ├── hello.f90
-│   ├── fibonacci.f90
-│   └── math_demo.f90
-├── tests/
-│   └── test_fsrtup.py
-└── README.md
+PUSH_INT  5
+PUSH_INT  2
+PUSH_INT  3
+MUL
+ADD
+STORE  'x'
 ```
 
-## Architecture
+For `DO i = 1, n`:
+```
+PUSH_INT 1
+STORE '__step_i__' ...
+PUSH_INT 1
+STORE '__step_i__'
+<loop_top>:
+LOAD '__step_i__'
+PUSH_INT 0
+CMP_GT
+JUMP_TRUE <step_pos>
+LOAD 'i'
+LOAD '__stop_i__'
+CMP_GE
+JUMP <merge>
+<step_pos>:
+LOAD 'i'
+LOAD '__stop_i__'
+CMP_LE
+<merge>:
+JUMP_FALSE <exit>
+  ... body ...
+LOAD 'i'
+LOAD '__step_i__'
+ADD
+STORE 'i'
+JUMP <loop_top>
+<exit>:
+```
+
+## Source layout
 
 ```
-Source (.f90)
-    │
-    ▼
- Lexer          → Token stream
-    │
-    ▼
- Parser         → AST (CompilationUnit)
-    │
-    ▼
- Interpreter    → Output
+src/
+├── lexer.py      Tokeniser → List[Token]
+├── ast_nodes.py  AST node dataclasses
+├── parser.py     Recursive-descent parser → CompilationUnit AST
+├── semantic.py   Symbol tables, type checking, scope resolution
+├── bytecode.py   Instruction set (Op enum) + BytecodeModule
+├── compiler.py   AST → BytecodeModule  ← THE COMPILER
+├── vm.py         BytecodeModule → output  ← THE VM
+└── fortpy.py     CLI driver
+
+examples/
+├── hello.f90
+├── fibonacci.f90
+├── math_demo.f90
+└── bubblesort.f90
 ```
 
-The interpreter uses a chain of `Environment` objects for scoping, with the global environment holding all top-level program units. Functions and subroutines run in their own fresh environment with parameters pre-bound.
+## Language support
+
+- `PROGRAM`, `SUBROUTINE`, `FUNCTION` units
+- `INTEGER`, `REAL`, `DOUBLE PRECISION`, `LOGICAL`, `CHARACTER`
+- `IF / ELSEIF / ELSE / END IF` blocks and single-line IF
+- `DO` counted loops, `DO WHILE`, infinite `DO`
+- `CYCLE`, `EXIT`, `GOTO`
+- 1-D arrays with `ALLOC_ARR` bytecode
+- `PRINT *`, `WRITE`
+- `IMPLICIT NONE`, `PARAMETER`
+- All arithmetic operators including `**`
+- `.AND.`, `.OR.`, `.NOT.`, `.EQ.`, `.NE.`, etc. (with short-circuit)
+- 40+ built-in functions
+
+## License
+
+MIT — free to use, modify, distribute.

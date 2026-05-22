@@ -1,11 +1,13 @@
 """
 FortPy AST — Abstract Syntax Tree node definitions
 """
+
 from dataclasses import dataclass, field
 from typing import List, Optional, Any, Union
 
 
 # ── Base ──────────────────────────────────────────────────────────────────────
+
 @dataclass
 class Node:
     """Base AST node."""
@@ -13,15 +15,17 @@ class Node:
 
 
 # ── Types ─────────────────────────────────────────────────────────────────────
+
 @dataclass
 class TypeSpec(Node):
-    name: str  # 'integer', 'real', 'logical', 'character', 'double precision'
+    name: str           # 'integer', 'real', 'logical', 'character', 'double precision'
     kind: Optional[Any] = None
-    length: Optional[Any] = None  # for CHARACTER*(n)
+    length: Optional[Any] = None   # for CHARACTER*(n)
     line: int = 0
 
 
 # ── Expressions ───────────────────────────────────────────────────────────────
+
 @dataclass
 class IntLiteral(Node):
     value: int
@@ -74,15 +78,16 @@ class FunctionCall(Node):
 
 
 # ── Statements ────────────────────────────────────────────────────────────────
+
 @dataclass
 class AssignStmt(Node):
-    target: Any  # Identifier or ArrayRef
+    target: Any          # Identifier or ArrayRef
     value: Any
     line: int = 0
 
 @dataclass
 class PrintStmt(Node):
-    fmt: Any  # '*' or format string or label
+    fmt: Any             # '*' or format string or label
     items: List[Any]
     line: int = 0
 
@@ -112,17 +117,17 @@ class IfBlock(Node):
     """IF ... THEN / ELSEIF / ELSE / END IF block."""
     condition: Any
     then_body: List[Any]
-    elseif_clauses: List[Any]  # list of (condition, body)
+    elseif_clauses: List[Any]   # list of (condition, body)
     else_body: Optional[List[Any]]
     line: int = 0
 
 @dataclass
 class DoLoop(Node):
-    var: Optional[str]   # None for DO WHILE
+    var: Optional[str]         # None for DO WHILE
     start: Optional[Any]
     stop: Optional[Any]
     step: Optional[Any]
-    condition: Optional[Any]  # for DO WHILE
+    condition: Optional[Any]   # for DO WHILE
     body: List[Any]
     label: Optional[int] = None
     line: int = 0
@@ -167,11 +172,12 @@ class ExitStmt(Node):
 
 
 # ── Declarations ──────────────────────────────────────────────────────────────
+
 @dataclass
 class VarDecl(Node):
     type_spec: TypeSpec
     names: List[str]
-    dimensions: dict = field(default_factory=dict)  # name -> [dim_expr, ...]
+    dimensions: dict = field(default_factory=dict)   # name -> [dim_expr, ...]
     initial_values: dict = field(default_factory=dict)
     is_parameter: bool = False
     intent: Optional[str] = None
@@ -183,11 +189,12 @@ class ImplicitNone(Node):
 
 @dataclass
 class ParameterStmt(Node):
-    assignments: List[Any]  # list of (name, expr)
+    assignments: List[Any]   # list of (name, expr)
     line: int = 0
 
 
 # ── Program Units ─────────────────────────────────────────────────────────────
+
 @dataclass
 class ProgramUnit(Node):
     name: str
